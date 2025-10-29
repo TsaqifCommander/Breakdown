@@ -6,11 +6,56 @@
 </head>
 <body>
     <div class="container">
-        <h1>Selamat Datang</h1>
-        <p>Kami menyediakan solusi terbaik untuk kebutuhan digital Anda dengan layanan berkualitas tinggi.</p>
-        <a href="#" class="btn">Pelajari Lebih Lanjut</a>
+        <h2>Sistem Pengecekan Tipe Konektor</h2>
+        <div class="form-group">
+            <label for="connector">Nomor Konektor:</label>
+            <input type="text" id="connector" placeholder="Contoh: 7123-1424-30">
+        </div>
+        <button onclick="checkConnector()">Cek Tipe Konektor</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
     </div>
+
+    <script>
+        // Database konektor dalam bentuk objek JavaScript
+        // Dalam implementasi nyata, ini bisa diambil dari file JSON eksternal
+        const connectorDatabase = {
+            "7123-1424-30": "Type A",
+            "7123-1424-31": "Type B",
+            "7123-1424-32": "Type C",
+            "7123-1424-33": "Type D",
+            "8123-1424-30": "Type E",
+            "8123-1424-31": "Type F",
+            "9123-1424-30": "Type G"
+        };
+
+        function checkConnector() {
+            const connectorInput = document.getElementById('connector').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            if (!connectorInput) {
+                showResult('error', 'Harap masukkan nomor konektor.');
+                return;
+            }
+            
+            // Cek apakah konektor ada dalam database
+            if (connectorDatabase.hasOwnProperty(connectorInput)) {
+                const connectorType = connectorDatabase[connectorInput];
+                showResult('success', `Konektor ${connectorInput} memiliki tipe: ${connectorType}`);
+            } else {
+                showResult('error', `Konektor ${connectorInput} tidak ditemukan dalam database.`);
+            }
+        }
+
+        function showResult(type, message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result ' + type;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
+
 
 
