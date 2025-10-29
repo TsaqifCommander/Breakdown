@@ -9,7 +9,7 @@
         <h2>Sistem Pengecekan Tipe Konektot</h2>
         <div class="form-group">
             <label for="connector">Nomor Konektor:</label>
-            <input type="text" id="connector" placeholder="Contoh: 7123-1424-30">
+            <input type="text" id="connector">
             <div id="result" class="result" style="display: none;"></div>
         </div>
         <button onclick="checkConnector()">Cek Tipe Konektor</button>
@@ -66,7 +66,7 @@
             // Cek apakah konektor ada dalam database
             if (connectorDatabase && connectorDatabase.hasOwnProperty(connectorInput)) {
                 const connectorType = connectorDatabase[connectorInput];
-                showResult('success', `Konektor <strong>${connectorInput}</strong> memiliki tipe: <strong>${connectorType}</strong>`);
+                showResult('success', `${connectorType}`);
             } else {
                 showResult('error', `Konektor <strong>${connectorInput}</strong> tidak ditemukan dalam database.`);
             }
@@ -87,10 +87,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
