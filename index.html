@@ -17,18 +17,28 @@
     </div>
 
     <script>
-        // Database konektor dalam bentuk objek JavaScript
-        // Dalam implementasi nyata, ini bisa diambil dari file JSON eksternal
-        const connectorDatabase = {
-            "7123-1424-30": "Type A",
-            "7123-1424-31": "Type B",
-            "7123-1424-32": "Type C",
-            "7123-1424-33": "Type D",
-            "8123-1424-30": "Type E",
-            "8123-1424-31": "Type F",
-            "9123-1424-30": "Type G"
-        };
-
+        // Variabel untuk menyimpan database
+        let connectorDatabase = null;
+        
+        // Fungsi untuk memuat database dari file JSON eksternal
+        async function loadDatabase() {
+            try {
+                const response = await fetch('Databases.json');
+                
+                if (!response.ok) {
+                    throw new Error('File database tidak dapat diakses');
+                }
+                
+                const data = await response.json();
+                connectorDatabase = data;
+                console.log('Database konektor berhasil dimuat');
+            } catch (error) {
+                console.error('Error loading database:', error);
+                showResult('error', 'Gagal memuat database. Pastikan file connectors.json tersedia.');
+            }
+        }
+        
+        // Fungsi untuk mengecek tipe konektor
         function checkConnector() {
             const connectorInput = document.getElementById('connector').value.trim();
             const resultDiv = document.getElementById('result');
@@ -38,24 +48,47 @@
                 return;
             }
             
-            // Cek apakah konektor ada dalam database
-            if (connectorDatabase.hasOwnProperty(connectorInput)) {
-                const connectorType = connectorDatabase[connectorInput];
-                showResult('success', `Konektor ${connectorInput} memiliki tipe: ${connectorType}`);
+            // Tampilkan loading jika database belum dimuat
+            if (!connectorDatabase) {
+                showResult('loading', 'Memuat database...');
+                loadDatabase().then(() => {
+                    // Setelah database dimuat, cek konektor
+                    checkConnectorInDatabase(connectorInput);
+                });
             } else {
-                showResult('error', `Konektor ${connectorInput} tidak ditemukan dalam database.`);
+                checkConnectorInDatabase(connectorInput);
             }
         }
-
+        
+        // Fungsi untuk mengecek konektor dalam database
+        function checkConnectorInDatabase(connectorInput) {
+            const resultDiv = document.getElementById('result');
+            
+            // Cek apakah konektor ada dalam database
+            if (connectorDatabase && connectorDatabase.hasOwnProperty(connectorInput)) {
+                const connectorType = connectorDatabase[connectorInput];
+                showResult('success', `Konektor <strong>${connectorInput}</strong> memiliki tipe: <strong>${connectorType}</strong>`);
+            } else {
+                showResult('error', `Konektor <strong>${connectorInput}</strong> tidak ditemukan dalam database.`);
+            }
+        }
+        
+        // Fungsi untuk menampilkan hasil
         function showResult(type, message) {
             const resultDiv = document.getElementById('result');
             resultDiv.className = 'result ' + type;
             resultDiv.innerHTML = message;
             resultDiv.style.display = 'block';
         }
+        
+        // Memuat database saat halaman pertama kali dibuka
+        window.onload = function() {
+            loadDatabase();
+        };
     </script>
 </body>
 </html>
+
 
 
 
