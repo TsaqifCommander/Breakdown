@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>Website Sederhana</title>
+    <!-- Include Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
         <h2>Sistem Pengecekan Tipe Konektor</h2>
-        
-        <!-- Form Input -->
         <div class="form-group">
             <label for="connector">Nomor Konektor:</label>
-            <input type="text" id="connector" placeholder="Contoh: 7123-1424-30">
+            <input type="text" id="connector" placeholder="Masukkan PartNo">
             <div id="result" class="result" style="display: none;"></div>
         </div>
         <button onclick="checkConnector()">Cek Tipe Konektor</button>
-
-        <!-- Tampilkan Semua Data -->
-        <div style="margin-top: 30px;">
+        
+        <!-- Tambahan: Tampilkan semua data konektor -->
+        <div style="margin-top: 20px;">
             <h3>Data Konektor dalam Database</h3>
             <button onclick="loadAllConnectors()">Muat Semua Data</button>
             <div id="allConnectors" style="margin-top: 10px;"></div>
@@ -27,104 +26,92 @@
 
     <script>
         // 🔧 KONFIGURASI SUPABASE - GANTI DENGAN DATA ANDA
-        const SUPABASE_URL = 'https://nytprjuugepwnlgsefvx.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55dHByanV1Z2Vwd25sZ3NlZnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MzY3MjEsImV4cCI6MjA3NzQxMjcyMX0.ZLL2QHEcayE5A0acGgAJdxbbRNfxioYYw35khJX3e48';
+        const SUPABASE_URL = 'https://your-project-ref.supabase.co';
+        const SUPABASE_ANON_KEY = 'your-anon-key-here';
         
         // Inisialisasi Supabase client
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Fungsi untuk mengecek konektor spesifik
+        // Fungsi untuk mengecek tipe konektor
         async function checkConnector() {
-            const connectorInput = document.getElementById('connector').value.trim();
+            const partNo = document.getElementById('connector').value.trim();
             const resultDiv = document.getElementById('result');
             
-            if (!connectorInput) {
-                showResult('error', 'Harap masukkan nomor konektor.');
+            if (!partNo) {
+                showResult('error', 'Harap masukkan nomor konektor (PartNo).');
                 return;
             }
 
             try {
-                // 📡 AMBIL DATA DARI DATABASE
+                // Query ke database Supabase - table: Connector
                 const { data, error } = await supabase
-                    .from('connectors')
-                    .select('*')
-                    .eq('number', connectorInput)
+                    .from('Connector')
+                    .select('PartNo, Type')
+                    .eq('PartNo', partNo)
                     .single();
 
                 if (error) {
                     if (error.code === 'PGRST116') {
-                        showResult('error', `Konektor "${connectorInput}" tidak ditemukan.`);
+                        showResult('error', `Konektor dengan PartNo <strong>${partNo}</strong> tidak ditemukan.`);
                     } else {
                         throw error;
                     }
                 } else if (data) {
                     showResult('success', 
-                        `✅ Ditemukan!<br>
-                         Nomor: ${data.number}<br>
-                         Tipe: ${data.type}`);
+                        `✅ Konektor ditemukan!<br>
+                         <strong>PartNo:</strong> ${data.PartNo}<br>
+                         <strong>Tipe:</strong> ${data.Type}`);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showResult('error', 'Error menghubungi database.');
+                showResult('error', 'Terjadi error saat menghubungi database.');
             }
         }
 
-        // 📊 FUNGSI UNTUK MENGAMBIL SEMUA DATA DARI DATABASE
+        // Fungsi untuk memuat semua data konektor
         async function loadAllConnectors() {
             const container = document.getElementById('allConnectors');
             
             try {
-                // 📡 AMBIL SEMUA DATA DARI DATABASE
                 const { data, error } = await supabase
-                    .from('connectors')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                    .from('Connector')
+                    .select('PartNo, Type')
+                    .order('PartNo');
 
                 if (error) throw error;
 
                 if (data.length === 0) {
-                    container.innerHTML = '<p>Tidak ada data konektor.</p>';
+                    container.innerHTML = '<p>Tidak ada data konektor dalam database.</p>';
                     return;
                 }
 
-                // 🎨 TAMPILKAN DATA DI HALAMAN
                 let html = '<table border="1" style="border-collapse: collapse; width: 100%;">';
-                html += `
-                    <tr>
-                        <th style="padding: 8px; background: #f0f0f0;">No</th>
-                        <th style="padding: 8px; background: #f0f0f0;">Nomor Konektor</th>
-                        <th style="padding: 8px; background: #f0f0f0;">Tipe</th>
-                        <th style="padding: 8px; background: #f0f0f0;">Tanggal Ditambah</th>
-                    </tr>
-                `;
+                html += '<tr><th style="padding: 8px;">PartNo</th><th style="padding: 8px;">Type</th></tr>';
                 
-                data.forEach((connector, index) => {
+                data.forEach(connector => {
                     html += `
                         <tr>
-                            <td style="padding: 8px;">${index + 1}</td>
-                            <td style="padding: 8px;">${connector.number}</td>
-                            <td style="padding: 8px;">${connector.type}</td>
-                            <td style="padding: 8px;">${new Date(connector.created_at).toLocaleDateString('id-ID')}</td>
+                            <td style="padding: 8px;">${connector.PartNo}</td>
+                            <td style="padding: 8px;">${connector.Type}</td>
                         </tr>
                     `;
                 });
                 
                 html += '</table>';
-                html += `<p><strong>Total: ${data.length} konektor</strong></p>`;
-                
                 container.innerHTML = html;
             } catch (error) {
                 console.error('Error:', error);
-                container.innerHTML = '<p style="color: red;">Error memuat data dari database.</p>';
+                container.innerHTML = '<p style="color: red;">Error memuat data konektor.</p>';
             }
         }
 
         // Fungsi untuk menampilkan hasil
         function showResult(type, message) {
             const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
             resultDiv.style.display = 'block';
             resultDiv.style.padding = '10px';
-            resultDiv.style.margin = '10px 0';
+            resultDiv.style.marginTop = '10px';
             resultDiv.style.borderRadius = '4px';
             
             if (type === 'success') {
@@ -136,15 +123,12 @@
                 resultDiv.style.color = '#a94442';
                 resultDiv.style.border = '1px solid #ebccd1';
             }
-            
-            resultDiv.innerHTML = message;
         }
 
-        // 🚀 MUAT DATA SAAT HALAMAN PERTAMA KALI DIBUKA
+        // Load semua data saat halaman pertama dibuka
         document.addEventListener('DOMContentLoaded', function() {
             loadAllConnectors();
         });
     </script>
 </body>
 </html>
-
