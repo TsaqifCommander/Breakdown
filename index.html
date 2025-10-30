@@ -3,27 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <title>Website Sederhana</title>
-    <!-- Include Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+        .connector-list {
+            margin-top: 20px;
+        }
+        .connector-item {
+            padding: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+            border-radius: 3px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h2>Sistem Pengecekan Tipe Konektorrr</h2>
+        <h2>Sistem Pengecekan Tipe Konektor</h2>
+        
+        <!-- Form Pengecekan -->
         <div class="form-group">
             <label for="connector">Nomor Konektor:</label>
-            <input type="text" id="connector" placeholder="Masukkan PartNo">
-            <div id="result" class="result" style="display: none;"></div>
+            <input type="text" id="connector" placeholder="Masukkan PartNo (contoh: 7123-1424-30)">
+            <button onclick="checkConnector()">Cek Tipe Konektor</button>
+            <div id="result" class="result"></div>
         </div>
-        <button onclick="checkConnector()">Cek Tipe Konektor</button>
-        
-        <!-- Tambahan: Tampilkan semua data konektor -->
-        <div style="margin-top: 20px;">
-            <h3>Data Konektor dalam Database</h3>
-            <button onclick="loadAllConnectors()">Muat Semua Data</button>
-            <div id="allConnectors" style="margin-top: 10px;"></div>
+
+        <!-- Daftar Semua Konektor -->
+        <div class="connector-list">
+            <h3>Daftar Konektor dalam Database</h3>
+            <button onclick="loadAllConnectors()">Muat Semua Konektor</button>
+            <div id="connectorsList"></div>
         </div>
     </div>
 
+    <!-- Include Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script>
         // 🔧 KONFIGURASI SUPABASE - GANTI DENGAN DATA ANDA
         const SUPABASE_URL = 'https://nytprjuugepwnlgsefvx.supabase.co';
@@ -32,27 +98,27 @@
         // Inisialisasi Supabase client
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Fungsi untuk mengecek tipe konektor
+        // Fungsi untuk mengecek tipe konektor berdasarkan PartNo
         async function checkConnector() {
-            const partNo = document.getElementById('connector').value.trim();
+            const connectorInput = document.getElementById('connector').value.trim();
             const resultDiv = document.getElementById('result');
             
-            if (!partNo) {
+            if (!connectorInput) {
                 showResult('error', 'Harap masukkan nomor konektor (PartNo).');
                 return;
             }
 
             try {
-                // Query ke database Supabase - table: Connector
+                // Query ke database 'Breakdown Proccess', table 'Connector'
                 const { data, error } = await supabase
                     .from('Connector')
                     .select('PartNo, Type')
-                    .eq('PartNo', partNo)
+                    .eq('PartNo', connectorInput)
                     .single();
 
                 if (error) {
                     if (error.code === 'PGRST116') {
-                        showResult('error', `Konektor dengan PartNo <strong>${partNo}</strong> tidak ditemukan.`);
+                        showResult('error', `Konektor dengan PartNo <strong>${connectorInput}</strong> tidak ditemukan dalam database.`);
                     } else {
                         throw error;
                     }
@@ -60,7 +126,7 @@
                     showResult('success', 
                         `✅ Konektor ditemukan!<br>
                          <strong>PartNo:</strong> ${data.PartNo}<br>
-                         <strong>Tipe:</strong> ${data.Type}`);
+                         <strong>Type:</strong> ${data.Type}`);
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -68,11 +134,12 @@
             }
         }
 
-        // Fungsi untuk memuat semua data konektor
+        // Fungsi untuk memuat semua konektor dari database
         async function loadAllConnectors() {
-            const container = document.getElementById('allConnectors');
+            const listDiv = document.getElementById('connectorsList');
             
             try {
+                // Query semua data dari table Connector
                 const { data, error } = await supabase
                     .from('Connector')
                     .select('PartNo, Type')
@@ -81,57 +148,48 @@
                 if (error) throw error;
 
                 if (data.length === 0) {
-                    container.innerHTML = '<p>Tidak ada data konektor dalam database.</p>';
+                    listDiv.innerHTML = '<p>Tidak ada konektor dalam database.</p>';
                     return;
                 }
 
-                let html = '<table border="1" style="border-collapse: collapse; width: 100%;">';
-                html += '<tr><th style="padding: 8px;">PartNo</th><th style="padding: 8px;">Type</th></tr>';
+                let html = '<div style="margin-top: 10px;">';
+                html += '<p><strong>Total: ' + data.length + ' konektor</strong></p>';
                 
                 data.forEach(connector => {
                     html += `
-                        <tr>
-                            <td style="padding: 8px;">${connector.PartNo}</td>
-                            <td style="padding: 8px;">${connector.Type}</td>
-                        </tr>
+                        <div class="connector-item">
+                            <strong>${connector.PartNo}</strong> - ${connector.Type}
+                        </div>
                     `;
                 });
                 
-                html += '</table>';
-                container.innerHTML = html;
+                html += '</div>';
+                listDiv.innerHTML = html;
             } catch (error) {
                 console.error('Error:', error);
-                container.innerHTML = '<p style="color: red;">Error memuat data konektor.</p>';
+                listDiv.innerHTML = '<p class="error">Error memuat data dari database.</p>';
             }
         }
 
         // Fungsi untuk menampilkan hasil
         function showResult(type, message) {
             const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result ' + type;
             resultDiv.innerHTML = message;
             resultDiv.style.display = 'block';
-            resultDiv.style.padding = '10px';
-            resultDiv.style.marginTop = '10px';
-            resultDiv.style.borderRadius = '4px';
-            
-            if (type === 'success') {
-                resultDiv.style.backgroundColor = '#dff0d8';
-                resultDiv.style.color = '#3c763d';
-                resultDiv.style.border = '1px solid #d6e9c6';
-            } else {
-                resultDiv.style.backgroundColor = '#f2dede';
-                resultDiv.style.color = '#a94442';
-                resultDiv.style.border = '1px solid #ebccd1';
-            }
         }
 
-        // Load semua data saat halaman pertama dibuka
+        // Load semua konektor saat halaman pertama dibuka
         document.addEventListener('DOMContentLoaded', function() {
             loadAllConnectors();
+        });
+
+        // Event listener untuk tekan Enter pada input field
+        document.getElementById('connector').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkConnector();
+            }
         });
     </script>
 </body>
 </html>
-
-
-
